@@ -25,13 +25,23 @@ function fectchAgainIfPossible(data){
 
 
 /**
+ * Prints the events after converting epoch to GMT time in milliseconds
+*/
+function formatAndPrint(event){
+    var date = new Date(event.action_epoch/1000)
+    event.action_epoch = date.toUTCString()+" "+date.getUTCMilliseconds()+"ms"
+    console.log(event)
+}
+
+
+/**
  * Prints the Event Data Fetched from Hypertrial
 */
 function printEvents(data){
 
     data.forEach(element => {
         if(!unwantedEvents.includes(element.event_type)){
-            console.log(element.event_type)
+            formatAndPrint(element)
         }
     });
 
