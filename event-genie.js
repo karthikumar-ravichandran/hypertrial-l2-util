@@ -3,13 +3,13 @@ var file = require('fs')
 
 
 /**
- * This method checks if the Hypertrial link with nextToken is present. If it is present, then it fetches the token and requests for the next set of events until, all events are fetched. It happens in a recursive way.
+ * This function extracts the nexToken from response to fetch next set of events.
 */
-function fectchAgainIfPossible(data){
-    
-    if(data.length!=0){
+function extractNextToken(linksArray){
 
-        var urlArray = data[0].href.split(/[=&?]+/)
+    if(linksArray.length!=0){
+
+        var urlArray = linksArray[0].href.split(/[=&?]+/)
 
         if(urlArray.includes("nextToken")){
 
@@ -17,9 +17,27 @@ function fectchAgainIfPossible(data){
             
             options.path = eventPath + nextToken
             console.log(options.path)
-            http.request(options,afterRequest).end()
 
+            return nextToken
         }
+        else{
+            console.log("Coudnt Fetch NextToken from link : "+linksArray[0].href)
+        }
+
+    }
+
+    return "NO_MORE_EVENTS"
+
+}
+
+
+/**
+ * This method checks if the Hypertrial link with nextToken is present. If it is present, then it fetches the token and requests for the next set of events until, all events are fetched. It happens in a recursive way.
+*/
+function fectchAgainIfPossible(links){
+    var extractedToken = extractNextToken(links)
+    if(extractedToken!="NO_MORE_EVENTS" && count!=fetchLimit){
+        http.request(options,afterRequest).end()
     }
 }
 
@@ -78,6 +96,7 @@ function generateOption(config){
 */
 function afterRequest(response){
 
+    count++
     let resp=''
 
     response.on('data',data=>{
@@ -92,12 +111,14 @@ function afterRequest(response){
 
 }
 
-var config = JSON.parse(file.readFileSync("config.json"))
-var nextToken="";
+var config = JSON.parse(file.readFileSync("config.json"));
 var unwantedEvents = ['USER_LOGOUT','TOKEN_GENERATED','USER_LOGIN'];
-var options = generateOption(config)
-var eventPath = options.path
+var options = generateOption(config);
+var eventPath = options.path;
+var count=0;
+var fetchLimit=5;
 
+var nextToken="";
 
 options.path = eventPath + nextToken
 console.log(options.path)
