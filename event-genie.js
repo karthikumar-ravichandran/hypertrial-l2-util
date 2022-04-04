@@ -16,7 +16,7 @@ function extractNextToken(linksArray){
             nextToken = "&nextToken="+urlArray[urlArray.length-1]
             
             options.path = eventPath + nextToken
-            console.log(options.path)
+            console.log(options.host+options.path)
 
             return nextToken
         }
@@ -37,8 +37,22 @@ function extractNextToken(linksArray){
 function fectchAgainIfPossible(links){
     var extractedToken = extractNextToken(links)
     if(extractedToken!="NO_MORE_EVENTS" && count!=fetchLimit){
+        console.log("****************************************************************************************************")
+        console.log("****************************************************************************************************")
         http.request(options,afterRequest).end()
     }
+}
+
+
+function filterEventsWithObjectAndValues(event){
+    
+    for(let i=0; i<eventFilterArray.length; i+=2){
+        if( !( Object.keys(event).includes(eventFilterArray[i]) 
+                && Object.values(event[eventFilterArray[i]]).includes(eventFilterArray[i+1]) ) ){
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -48,14 +62,17 @@ function fectchAgainIfPossible(links){
 function formatAndPrint(event){
     var date = new Date(event.action_epoch/1000)
     event.action_epoch = date.toUTCString()+" "+date.getUTCMilliseconds()+"ms"
-    console.log(event)
+    if(filterEventsWithObjectAndValues(event)){
+        console.log(event)
+        console.log("****************************************************************************************************")
+    }
 }
 
 
 /**
  * Prints the Event Data Fetched from Hypertrial
 */
-function printEvents(data){
+    function printEvents(data){
 
     data.forEach(element => {
         if(!unwantedEvents.includes(element.event_type)){
@@ -112,18 +129,21 @@ function afterRequest(response){
 }
 
 var config = JSON.parse(file.readFileSync("config.json"));
-var unwantedEvents = ['USER_LOGOUT','TOKEN_GENERATED','USER_LOGIN'];
+var unwantedEvents = ['USER_LOGOUT','PASSWORD_CHANGED','TOKEN_GENERATED','USER_LOGIN','USER_LOGIN_FAILED'];
+var eventFilterArray = [];
 var options = generateOption(config);
 var eventPath = options.path;
 var count=0;
-var fetchLimit=5;
+var fetchLimit=30;
 
 var nextToken="";
 
+/**
+ * Request is made only after printing the url path that is going to be used 
+*/
 options.path = eventPath + nextToken
-console.log(options.path)
+console.log(options.host+options.path)
 http.request(options,afterRequest).end()
-
 
 
 
